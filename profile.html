@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Profile - GREEN IQ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+/* ===== TOKEN CHECK ===== */
+const token = localStorage.getItem("token");
+if (!token) location.href = "login.html";
+
+function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("playerName");
+    location.href = "login.html";
+}
+</script>
+
+<style>
+body {
+    margin:0;
+    font-family:Arial;
+    background:url("profile2.jpg") no-repeat center center fixed;
+    background-size:cover;
+}
+
+header {
+    position:absolute;
+    top:0;
+    width:100%;
+    z-index:10;
+    backdrop-filter:blur(6px);
+    padding:15px 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    height:45px;
+}
+
+nav a {
+    margin-right:40px;
+    margin-left:10px;
+    text-decoration:none;
+    font-weight:bold;
+    color:#f8fcee;
+    font-size:20px;
+}
+
+section {   
+    padding:100px 20px 20px; 
+}
+
+.card {
+    background:rgba(0,0,0,0.5);
+    max-width:720px;
+    margin:0 auto 40px;
+    padding:40px;
+    border-radius:14px;
+    color:#ddd;
+    box-shadow: 0 2px 6px rgba(129, 129, 129, 0.911);
+}
+
+h1{ color:#c9ef08; }
+
+h2{color:rgb(195, 225, 26)}
+
+.row { margin:10px 0; }
+.label { font-weight:bold; display:inline-block; width:150px; }
+
+.buttons a {
+    display:inline-block;
+    margin-top:15px;
+    margin-right:10px;
+    padding:8px 16px;
+    border-radius:20px;
+    text-decoration:none;
+    background:#16a34a;
+    color:white;
+    font-size:14px;
+}
+
+ul { padding-left:18px; }
+
+@media(max-width:600px){
+    header{flex-direction:column;align-items:flex-start;}
+    nav a{display:block;margin:8px 0;}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div style="font-size:32px;font-weight:bold;color:#e6efe6;">GREEN IQ</div>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="pollution.html">Pollution Checker</a>
+        <a href="game.html">Game</a>
+        <a href="leaderboard.html">Leaderboard</a>
+        <a href="profile.html">Profile</a>
+        <a href="#" onclick="logout()">Logout</a>
+    </nav>
+</header>
+
+<section>
+<div class="card">
+    <h1>Your Profile</h1>
+
+    <!-- USER DETAILS -->
+    <div class="row"><span class="label">Name:</span> <span id="name">-</span></div>
+    <div class="row"><span class="label">Email:</span> <span id="email">-</span></div>
+    <div class="row"><span class="label">Country:</span> <span id="country">-</span></div>
+    <div class="row"><span class="label">Member Since:</span> <span id="memberSince">-</span></div>
+
+    <hr>
+
+    <!-- STATS -->
+    <div class="row"><span class="label">Best Score:</span> <span id="bestScore">0</span></div>
+    <div class="row"><span class="label">Total Checks:</span> <span id="totalChecks">0</span></div>
+    <div class="row"><span class="label">Last Check:</span> <span id="lastCheck">-</span></div>
+
+    <hr>
+
+    <!-- ACHIEVEMENTS -->
+    <h2>Achievements</h2>
+    <ul id="achievementsList"></ul>
+
+    <div class="buttons">
+        <a href="game.html">Go to Game</a>
+        <a href="pollution.html">Check Pollution</a>
+    </div>
+</div>
+</section>
+
+<script>
+const API_BASE = "http://localhost:4000";
+
+/* ===== LOAD PROFILE ===== */
+async function loadProfile() {
+try {
+    /* USER */
+    const u = await fetch(`${API_BASE}/api/auth/me`, {
+        headers:{Authorization:"Bearer "+token}
+    }).then(r=>r.json());
+
+    document.getElementById("name").textContent = u.name;
+    document.getElementById("email").textContent = u.email;
+    document.getElementById("country").textContent = u.country || "-";
+    document.getElementById("memberSince").textContent =
+        new Date(u.createdAt).toLocaleDateString();
+
+    /* STATS */
+    const s = await fetch(`${API_BASE}/api/user/stats`, {
+        headers:{Authorization:"Bearer "+token}
+    }).then(r=>r.json());
+
+    document.getElementById("bestScore").textContent = s.bestScore || 0;
+    document.getElementById("totalChecks").textContent = s.totalPollutionChecks || 0;
+    document.getElementById("lastCheck").textContent =
+        s.lastPollutionCheck ? new Date(s.lastPollutionCheck).toLocaleString() : "-";
+
+    /* ACHIEVEMENTS */
+    const a = await fetch(`${API_BASE}/api/user/achievements`, {
+        headers:{Authorization:"Bearer "+token}
+    }).then(r=>r.json());
+
+    const list = document.getElementById("achievementsList");
+    list.innerHTML = "";
+
+    if (!a.length) {
+        list.innerHTML = "<li>No achievements yet.</li>";
+    } else {
+        a.forEach(x => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <strong>${x.Achievement.title}</strong><br>
+                <small>${x.Achievement.description || ""}</small><br>
+                <small>Earned: ${new Date(x.earnedDate).toLocaleString()}</small>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+} catch (e) {
+    console.error("Profile load error:", e);
+}
+}
+
+loadProfile();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Login - GREEN IQ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    background-image:url("image.jpg");
+    background-size:cover;
+    background-repeat: no-repeat; 
+    background-position: center;  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+
+    font-family: Arial;
+}
+h1{
+    text-align:center;
+    color:rgba(255, 255, 255, 0.877);
+    font-size: 45px;
+    margin-top:0px;
+}
+.box {
+    background-color: rgba(0,0,0,0.2);
+    padding: 100px;
+    width: 500px;
+    height:450px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(129, 129, 129, 0.911);
+    align-items:center;
+}
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius:10px;
+}
+button {
+    background: rgb(37, 146, 37);
+    color: white;
+    border: 0;
+    border-radius: 10px;
+    cursor:pointer;
+    font-size:18px;
+    width: 522px;
+}
+p{
+    color:#fff;
+}
+
+a { 
+    color: rgb(240, 227, 44); 
+    text-decoration: none; 
+    cursor: pointer;
+}
+a:hover{
+    color:rgb(201, 189, 28); 
+}
+#error { 
+    color: rgb(221, 85, 85); 
+    font-size: 15px; 
+    margin-top: 5px;
+}
+input[type="email"]{
+    color: white;
+}
+input[type="password"]{
+    color: white;
+}
+button:hover{
+    background-color: darkgreen;
+}
+::placeholder{
+    color:white;
+    font-size:16px;
+    padding: 10px;
+}
+
+
+</style>
+
+</head>
+
+<body>
+<div class="box">
+    <h1>GREEN IQ</h1>
+
+    <input id="email" type="email" placeholder="Email" >
+    <input id="pass" type="password" placeholder="Password">
+
+    <div id="error"></div>
+
+    <button onclick="login()">Login</button>
+
+    <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+</div>
+
+<script>
+// Correct API URL
+const API_BASE = "http://localhost:4000";
+
+async function login() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("pass").value.trim();
+    const error = document.getElementById("error");
+
+    error.textContent = "";
+
+    if (!email || !password) {
+        error.textContent = "Please fill all fields";
+        return;
+    }
+
+    try {
+        // Correct endpoint
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            error.textContent = data.message || "Login failed";
+            return;
+        }
+
+        // Save token + user data
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("playerName", data.user.name);
+        localStorage.setItem("userEmail", data.user.email);
+
+        if (!localStorage.getItem("quizDone")) {
+    location.href = "quiz.html";
+} else {
+    location.href = "index.html";
+}
+
+        // Redirect to home
+        location.href = "index.html";
+
+    } catch (err) {
+        error.textContent = "Network error";
+    }
+}
+</script>
+</body>
+</html>

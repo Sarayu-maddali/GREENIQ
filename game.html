@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Greensteps Game - GREEN IQ</title>
+
+<!-- TOKEN CHECK -->
+<script>
+const token = localStorage.getItem("token");
+if (!token) location.href = "login.html";
+
+function logout(){
+    localStorage.removeItem("token");
+    location.href = "login.html";
+}
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial;
+    overflow-x: hidden;
+    background: url("profile2.jpg") no-repeat center center;
+    background-size: cover;
+}
+header {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+    background: rgba(255, 243, 243, 0);
+    backdrop-filter: blur(6px);
+    padding: 15px 18px;     
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height:45px;           /* fixed compact height */
+}
+/* NAV MENU */
+nav a {
+    margin-left: 10px;
+    margin-right:40px;
+    text-decoration: none;
+    font-weight: bold;
+    color:#f8fcee;
+    font-size:20px;
+}
+nav a:hover{
+    color:#c8c9c998;
+}
+section {
+    padding: 100px 20px 20px;
+}
+.card {
+    background: rgba(0,0,0,0.5);
+    color: white;
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+}
+.progress {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border-radius: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 18px;
+    width: 0%;
+    background: linear-gradient(90deg,#22c55e,#0f5f2d,#0f766e);
+}
+.task-button {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.task-button:hover{
+  background-color: #0f5f2d;
+  transform:scale(1.03);
+}
+.category-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.category {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid #34d399;
+    cursor: pointer;
+}
+.category.active {
+    background: #16a34a;
+}
+#searchInput {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+/* ===== TASK TILES ===== */
+.task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.task-tile {
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    padding: 18px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+}
+
+.task-tile:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.task-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.task-title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.task-desc {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 6px 0;
+}
+
+.task-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.task-points {
+    background: #16a34a;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+.task-mode {
+    font-size: 12px;
+    opacity: 0.8;
+    text-transform: uppercase;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+  <div style="font-size:32px;font-weight:bold;color:#ecf5ec;">GREEN IQ</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="pollution.html">Pollution Checker</a>
+    <a href="game.html">Game</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="profile.html">Profile</a>
+    <a onclick="logout()" style="cursor:pointer;">Logout</a>
+  </nav>
+</header>
+
+<section>
+
+<div class="card">
+  <h1 style="color:#c9ef08">Greensteps Game</h1>
+  <h2>Player: <span id="playerName"></span></h2>
+  <h2>Score: <span id="score">0</span></h2>
+  <h3>Level: <span id="level">1</span></h3>
+  <h3>Streak: <span id="streak">0</span> days</h3>
+
+  <div class="progress"><div class="progress-bar" id="progress"></div></div>
+
+  <h3>Badges</h3>
+  <p id="badges">No badges yet.</p>
+
+  <button class="task-button" onclick="location.href='leaderboard.html'">
+    View Leaderboard
+  </button>
+</div>
+
+<div class="card">
+  <h2>Tasks</h2>
+  <input id="searchInput" placeholder="Search tasks..." oninput="renderTasks()">
+
+  <div class="category-bar">
+    <div class="category active" onclick="setCategory('all',event)">All</div>
+    <div class="category" onclick="setCategory('easy',event)">Easy</div>
+    <div class="category" onclick="setCategory('medium',event)">Medium</div>
+    <div class="category" onclick="setCategory('hard',event)">Hard</div>
+  </div>
+
+  <div id="taskList" class="task-grid"></div>
+</div>
+
+</section>
+
+<script>
+const API_BASE = "http://localhost:4000";
+let score = 0;
+let streak = 0;
+let allTasks = [];
+let currentCategory = "all";
+
+document.getElementById("playerName").innerText =
+  localStorage.getItem("playerName") || "Player";
+
+/* ===== STREAK LOGIC (CLIENT SIDE – FIXED) ===== */
+function updateStreak() {
+  const today = new Date();
+  const todayStr = today.toDateString();
+  const lastDate = localStorage.getItem("lastDate");
+
+  if (!lastDate) {
+    streak = 1;
+  } else {
+    const last = new Date(lastDate);
+    const diffDays = Math.floor((today - last) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) streak++;
+    else if (diffDays > 1) streak = 1;
+  }
+
+  localStorage.setItem("streak", streak);
+  localStorage.setItem("lastDate", todayStr);
+}
+
+/* LOAD USER SCORE FROM SERVER */
+async function loadUserStats() {
+  const res = await fetch(`${API_BASE}/api/user/stats`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const data = await res.json();
+
+  score = data.bestScore || 0;
+  streak = parseInt(localStorage.getItem("streak")) || 0;
+
+  updateStreak();
+  updateUI();
+}
+
+/* UPDATE UI */
+function updateUI() {
+  document.getElementById("score").innerText = score;
+  document.getElementById("streak").innerText = streak;
+
+  const level = Math.floor(score / 200) + 1;
+  document.getElementById("level").innerText = level;
+  document.getElementById("progress").style.width = (score % 200) / 2 + "%";
+
+  let badges = "";
+// ===== CURRENT SCORE BADGE =====
+let badge = "";
+
+if (score >= 20000) badge = "👑🌍 Guardian of Earth";
+else if (score >= 15000) badge = "💚🌍 Planet Saver";
+else if (score >= 10000) badge = "🤲🌍 Earth Steward";
+else if (score >= 9000) badge = "🌐🌿 Global Green Advocate";
+else if (score >= 8000) badge = "⚡🌱 Eco Change Maker";
+else if (score >= 7000) badge = "🦸‍♂️🌍 Climate Hero";
+else if (score >= 6500) badge = "🏗️🌱 Sustainability Architect";
+else if (score >= 6000) badge = "🔮 Green Visionary";
+else if (score >= 5600) badge = "🌍🛡️ Planet Guardian";
+else if (score >= 5500) badge = "🛡️🌍 Earth Protector";
+else if (score >= 5000) badge = "📢 Environmental Influencer";
+else if (score >= 4500) badge = "📊 Eco Project Manager";
+else if (score >= 4000) badge = "🔄 Circular Economy Advocate";
+else if (score >= 3500) badge = "🗺️ Environmental Planner";
+else if (score >= 3000) badge = "📚 Eco Educator";
+else if (score >= 2600) badge = "☀️ Renewable Supporter";
+else if (score >= 2300) badge = "🗑️➖ Waste Reduction Expert";
+else if (score >= 2000) badge = "🚰 Water Conservation Pro";
+else if (score >= 1700) badge = "👥 Clean Community Leader";
+else if (score >= 1500) badge = "🕊️ Green Ambassador";
+else if (score >= 1400) badge = "🏆 Sustainability Champion";
+else if (score >= 1300) badge = "⭐ Eco Role Model";
+else if (score >= 1200) badge = "🌦️ Climate Aware Citizen";
+else if (score >= 1100) badge = "🏡 Green Lifestyle Adopter";
+else if (score >= 1000) badge = "💧 Resource Saver";
+else if (score >= 900) badge = "📣 Eco Advocate";
+else if (score >= 800) badge = "🚲 Low-Carbon Hero";
+else if (score >= 700) badge = "🌳 Tree Guardian";
+else if (score >= 600) badge = "🧹 Clean Earth Contributor";
+else if (score >= 500) badge = "🌎 Sustainability Seeker";
+else if (score >= 400) badge = "♻️ Green Habit Builder";
+else if (score >= 300) badge = "🧭 Eco Explorer";
+else if (score >= 250) badge = "💡 Energy Saver";
+else if (score >= 200) badge = "🍃 Nature Friend";
+else if (score >= 150) badge = "🪴 Planet Helper";
+else if (score >= 100) badge = "🌿 Eco Curious";
+else if (score >= 50) badge = "🌱 Green Starter";
+
+// ===== STREAK BADGE (OPTIONAL) =====
+let streakBadge = "";
+if (streak >= 30) streakBadge = "🔥🔥🔥 30-Day Streak";
+else if (streak >= 10) streakBadge = "🔥🔥 10-Day Streak";
+else if (streak >= 5) streakBadge = "🔥 5-Day Streak";
+
+// ✅ DISPLAY FINAL BADGE
+document.getElementById("badges").innerHTML =
+  streakBadge ? `${badge}<br>${streakBadge}` : badge;
+
+}
+
+/* TASKS */
+async function loadTasksFromServer() {
+  const res = await fetch(`${API_BASE}/api/gametasks`);
+  allTasks = await res.json();
+  renderTasks();
+}
+
+function setCategory(cat, e) {
+  currentCategory = cat;
+  document.querySelectorAll(".category").forEach(c => c.classList.remove("active"));
+  e.target.classList.add("active");
+  renderTasks();
+}
+const taskEmojiMap = {
+  "Switch off unused lights": "💡❌",
+  "Carry a reusable water bottle": "🚰🥤",
+  "Use a cloth bag": "🛍️♻️",
+  "Segregate waste": "🗑️↔️",
+  "Save paper": "📄💚",
+  "Close taps properly": "🚱🔧",
+  "Use stairs instead of lift": "🪜⬆️",
+  "Plant care": "🪴💧",
+
+  "Plant a sapling": "🌱🌍",
+  "Compost kitchen waste": "🍂🪱",
+  "Avoid plastic for 1 full day": "🚫🧴",
+  "Use public transport / cycle": "🚌🚲",
+  "Reuse old items creatively": "🎨♻️",
+  "Participate in a cleanup": "🧹🌳",
+  "Save electricity for a day": "⚡🌙",
+  "Repair instead of replacing": "🛠️🔄",
+  "Share awareness": "📣🌿",
+
+  "Organize a cleanliness drive": "🧹👥",
+  "Plant & maintain 5+ trees": "🌳🌳",
+  "Start compost system at home/society": "♻️🏡",
+  "Conduct eco-awareness session": "🎤🌱",
+  "Reduce electricity bill by 20%": "📉⚡",
+  "Create an eco campaign": "🪧🌍",
+  "Implement waste segregation system": "🗑️📦",
+  "Lead a sustainability project": "🏗️🌱",
+  "Build rainwater harvesting model": "🌧️🚰"
+};
+function getTaskEmoji(taskName) {
+  return taskEmojiMap[taskName] || "🌍"; // default emoji
+}
+
+function renderTasks() {
+  const q = document.getElementById("searchInput").value.toLowerCase();
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  allTasks
+    .filter(t => currentCategory === "all" || t.mode === currentCategory)
+    .filter(t => t.taskName.toLowerCase().includes(q))
+    .forEach(t => {
+
+      const tile = document.createElement("div");
+      tile.className = "task-tile";
+
+      // ✅ GET UNIQUE EMOJI FOR EACH TASK
+      const emoji = getTaskEmoji(t.taskName);
+
+      tile.innerHTML = `
+        <div class="task-icon">${emoji}</div>
+        <div class="task-title">${t.taskName}</div>
+        <div class="task-desc">Complete this eco task</div>
+        <div class="task-footer">
+          <span class="task-points">+${t.points} pts</span>
+          <span class="task-mode">${t.mode}</span>
+        </div>
+      `;
+
+      tile.onclick = () => completeTask(t.points, t.taskName);
+      list.appendChild(tile);
+    });
+}
+
+/* COMPLETE TASK */
+async function completeTask(points, name) {
+  const newScore = score + points;
+
+  await fetch(`${API_BASE}/api/score`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ score: newScore })
+  });
+
+  alert(`✓ ${name}\n+${points} points`);
+  loadUserStats();
+}
+
+/* INIT */
+loadUserStats();
+loadTasksFromServer();
+</script>
+
+</body>
+</html>

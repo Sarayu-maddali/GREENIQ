@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Green IQ – Awareness Quiz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0; 
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background: url("quiz.jpeg") no-repeat center center;
+    background-size: cover; 
+    color: white;
+}
+
+.quiz-box {
+    background: rgba(0,0,0,0.4);
+    padding: 30px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+.quiz-wrapper {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.question {
+    margin-top: 20px;
+    font-size: 18px;
+}
+
+.options label {
+    display: block;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 25px;
+    background: #22c55e;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #16a34a;
+}
+
+.result {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="quiz-wrapper">
+  <div class="quiz-box">
+    <h2>🌱 Green Awareness Quiz</h2>
+    <p style="text-align:center;font-size:14px;">
+        Complete this quick quiz to enter GREEN IQ
+    </p>
+
+    <div id="quiz">
+        <!-- Question loads here -->
+    </div>
+
+    <button onclick="nextQuestion()">Next</button>
+
+    <div class="result" id="result"></div>
+  </div>
+</div>
+
+<script>
+/* BLOCK REOPENING */
+if (localStorage.getItem("quizDone")) {
+    location.href = "index.html";
+}
+
+const quizData = [
+    {
+        q: "Which gas is mainly responsible for global warming?",
+        options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
+        answer: 1
+    },
+    {
+        q: "Which of the following is a renewable energy source?",
+        options: ["Coal", "Petrol", "Solar Energy", "Diesel"],
+        answer: 2
+    },
+    {
+        q: "What helps reduce plastic pollution?",
+        options: ["Single-use plastics", "Burning plastic", "Recycling", "Throwing in rivers"],
+        answer: 2
+    },
+    {
+        q: "Which activity saves electricity?",
+        options: ["Leaving lights ON", "Using LED bulbs", "Overusing AC", "Charging overnight"],
+        answer: 1
+    },
+    {
+        q: "Planting trees helps in?",
+        options: ["Increasing pollution", "Reducing oxygen", "Absorbing CO₂", "Raising temperature"],
+        answer: 2
+    }
+];
+
+let current = 0;
+let score = 0;
+
+function loadQuestion() {
+    const q = quizData[current];
+    document.getElementById("quiz").innerHTML = `
+        <div class="question">${current + 1}. ${q.q}</div>
+        <div class="options">
+            ${q.options.map((opt, i) => `
+                <label>
+                    <input type="radio" name="option" value="${i}"> ${opt}
+                </label>
+            `).join("")}
+        </div>
+    `;
+}
+
+function nextQuestion() {
+    const selected = document.querySelector("input[name='option']:checked");
+    if (!selected) {
+        alert("Please select an option");
+        return;
+    }
+
+    if (parseInt(selected.value) === quizData[current].answer) {
+        score++;
+    }
+
+    current++;
+
+    if (current < quizData.length) {
+        loadQuestion();
+    } else {
+        finishQuiz();
+    }
+}
+
+function finishQuiz() {
+    localStorage.setItem("quizDone", "true");
+
+    document.getElementById("quiz").innerHTML = "";
+    document.querySelector("button").style.display = "none";
+
+    document.getElementById("result").innerHTML = `
+        🎉 Quiz Completed! <br>
+        Your Score: <b>${score} / ${quizData.length}</b><br><br>
+        Redirecting to GREEN IQ...
+    `;
+
+    setTimeout(() => {
+        location.href = "index.html";
+    }, 2000);
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>

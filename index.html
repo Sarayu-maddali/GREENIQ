@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GREEN IQ - Home</title>
+
+<!-- TOKEN CHECK-->
+<script>
+const token = localStorage.getItem("token");
+if (!token) location.href = "login.html";
+
+function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("playerName");
+    location.href = "login.html";
+}
+</script>
+
+<style>
+/* RESET + FULLSCREEN */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial;
+    overflow-x: hidden;
+    background: url("profile2.jpg") no-repeat center center;
+    background-repeat: no-repeat; 
+    background-position: center; 
+    background-size: cover;
+
+}
+
+/* HEADER */
+header {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+    background: rgba(255, 243, 243, 0);
+    backdrop-filter: blur(6px);
+    padding: 15px 18px;     
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height:45px;           /* fixed compact height */
+}
+/* NAV MENU */
+nav a {
+    margin-left: 10px;
+    margin-right:40px;
+    text-decoration: none;
+    font-weight: bold;
+    color:#f8fcee;
+    font-size:20px;
+}
+nav a:hover{
+    color:#c8c9c998;
+}
+
+/* HERO SECTION LIKE TEMPLATE */
+.hero {
+    height: 100vh;
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 80px;
+}
+
+/* DARK GRADIENT FOR READABILITY */
+.hero::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(
+        to right,
+        rgba(0,0,0,0.55),
+        rgba(0,0,0,0.20),
+        rgba(0,0,0,0.05)
+    );
+}
+
+/* HERO TEXT */
+.hero-content {
+    position: relative;
+    max-width: 600px;
+    color: #2a1010;
+}
+
+.hero h1 {
+    font-size: 48px;
+    margin: 0;
+    font-weight: bold;
+}
+
+.hero p {
+    margin-top: 18px;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+/* BUTTONS LIKE TEMPLATE */
+.hero-buttons {
+    margin-top: 25px;
+}
+
+.hero-buttons a {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 30px;
+    font-size: 16px;
+    text-decoration: none;
+    margin-right: 12px;
+    transition: 0.2s;
+}
+
+.hero-buttons .primary {
+    background: #1d8712;
+    color: white;
+}
+
+.hero-buttons .primary:hover {
+    background:rgb(19, 78, 21);
+}
+
+.hero-buttons .secondary {
+    background:#1d8712;
+    color: white;
+}
+
+.hero-buttons .secondary:hover {
+    background: rgb(19, 78, 21);
+}
+
+/* RESPONSIVE */
+@media (max-width: 700px) {
+    .hero {
+        padding-left: 30px;
+        text-align: left;
+    }
+
+    .hero h1 {
+        font-size: 34px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1 style="color:#dceadd">GREEN IQ</h1>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="pollution.html">Pollution Checker</a>
+        <a href="game.html">Game</a>
+        <a href="leaderboard.html">Leaderboard</a>
+        <a href="profile.html">Profile</a>
+        <a href="javascript:logout()">Logout</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <h1 style="color:rgb(193, 206, 11);">Welcome to GREEN IQ</h1>
+        <p style="color:white;">
+            GREEN IQ helps you check real-time pollution levels worldwide and enjoy an
+            interactive carbon-offset game where you earn points for eco-friendly actions.
+        </p>
+
+        <div class="hero-buttons">
+            <a href="pollution.html" class="primary">Check Pollution</a>
+            <a href="game.html" class="secondary">Play Greensteps Game</a>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

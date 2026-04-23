@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>Pollution Checker - GREEN IQ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+// TOKEN CHECK
+const token = localStorage.getItem("token");
+if (!token) location.href = "login.html";
+
+function logout() {
+    localStorage.clear();
+    location.href = "login.html";
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial;
+    overflow-x: hidden;
+    background: url("profile2.jpg") no-repeat center center;
+    background-repeat: no-repeat; 
+    background-position: center; 
+    background-size: cover;
+    color:white;
+
+}
+header {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+    background: rgba(255, 243, 243, 0);
+    backdrop-filter: blur(6px);
+    padding: 15px 18px;     
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height:45px;           
+}
+nav a {
+    margin-left: 10px;
+    margin-right:40px;
+    text-decoration: none;
+    font-weight: bold;
+    color:#f8fcee;
+    font-size:20px;
+}
+nav a:hover{
+    color:#c8c9c998;
+}
+section {
+     padding:100px 20px 20px;
+}
+.card {
+    
+    background:rgba(0,0,0,0.48);
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow: 0 2px 6px rgba(129, 129, 129, 0.911);
+
+}
+
+input, button {
+    padding:10px;
+    margin-top:10px;
+}
+
+button {
+    background:green;
+    color:#fff;
+    border:0;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    background-color:rgba(0,0,0,0.48);
+}
+
+th, td {
+    padding:10px;
+    text-align:left;
+    font-size:14px;
+    color:white;
+}
+
+th { 
+    background:rgba(0,0,0,0.48);
+    color:white;
+}
+button:hover{
+    background-color: darkgreen;
+}
+
+@media(max-width:600px) {
+    header { flex-direction:column; align-items:flex-start; }
+    nav a { display:block; margin:8px 0; }
+    input, button { width:100%; }
+}
+</style>
+</head>
+<body>
+<header>
+    <div style="color:#dceadd;font-size:32px;font-weight: bold;font-family: arial;">GREEN IQ</div>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="pollution.html">Pollution Checker</a>
+        <a href="game.html">Game</a>
+        <a href="leaderboard.html">Leaderboard</a>
+        <a href="profile.html">Profile</a>
+        <a href="javascript:logout()">Logout</a>
+    </nav>
+</header>
+
+<section>
+
+    <!-- HEATMAP -->
+    <div class="card">
+        <h2 style="color:#c9ef08">🌍 World Pollution Heatmap</h2>
+        <iframe src="https://waqi.info/map/" width="100%" height="450" style="border:0;"></iframe>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="card">
+        <h2>Check Pollution of Any City</h2>
+
+        <input id="city" placeholder="Enter city">
+        <button onclick="searchCity()">Search</button>
+        <button onclick="getLocation()">Use Current Location</button>
+
+        <div id="status" style="font-size:13px;margin-top:5px;"></div>
+        <div id="output"></div>
+
+        <canvas id="chart" style="margin-top:20px; max-height:350px;"></canvas>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="card">
+        <h2>Your Recent Pollution Checks</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>City</th>
+                    <th>AQI</th>
+                    <th>PM2.5</th>
+                    <th>PM10</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</section>
+
+<script>
+// ========= CONFIG =========
+const API_BASE = "http://localhost:4000";
+const AQI_TOKEN = "5044bc1e8f7fd9b4609c72e759f1f16a2164e878";
+
+let chart;
+
+// ========= SHOW DATA =========
+function showData(city, aqi, pm25, pm10, no2, o3, co) {
+    document.getElementById("output").innerHTML = `
+        <h3>${city}</h3>
+        <p><b>AQI:</b> ${aqi}</p>
+        <p>PM2.5: ${pm25 ?? "N/A"}</p>
+        <p>PM10: ${pm10 ?? "N/A"}</p>
+        <p>NO₂: ${no2 ?? "N/A"}</p>
+        <p>O₃: ${o3 ?? "N/A"}</p>
+        <p>CO: ${co ?? "N/A"}</p>
+    `;
+
+    const ctx = document.getElementById("chart").getContext("2d");
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: ["PM2.5", "PM10", "NO2", "O3", "CO"],
+            datasets: [{
+                data: [pm25 || 0, pm10 || 0, no2 || 0, o3 || 0, co || 0],
+                backgroundColor: ["#4caf50", "#81c784", "#66bb6a", "#388e3c", "#2e7d32"]
+            }]
+        },
+        options: { plugins: { legend: { display: false } } }
+    });
+
+    saveHistory(city, aqi, pm25, pm10, no2, o3, co);
+}
+
+// ========= SAVE HISTORY TO DATABASE =========
+async function saveHistory(city, aqi, pm25, pm10, no2, o3, co) {
+    try {
+        await fetch(`${API_BASE}/api/pollution/history`, {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer " + token
+            },
+            body: JSON.stringify({ city, aqi, pm25, pm10, no2, o3, co })
+        });
+        loadHistory();
+    } catch (err) {
+        console.error("Error saving history", err);
+    }
+}
+
+// ========= SEARCH BY CITY =========
+async function searchCity() {
+    const city = document.getElementById("city").value.trim();
+    if (!city) return;
+
+    document.getElementById("status").textContent = "Loading...";
+
+    try {
+        const res = await fetch(`https://api.waqi.info/feed/${city}/?token=${AQI_TOKEN}`);
+        const data = await res.json();
+
+        if (data.status !== "ok") {
+            document.getElementById("status").textContent = "City not found.";
+            return;
+        }
+
+        const d = data.data;
+        document.getElementById("status").textContent = "";
+
+        showData(
+            d.city.name, d.aqi,
+            d.iaqi.pm25?.v, d.iaqi.pm10?.v,
+            d.iaqi.no2?.v, d.iaqi.o3?.v,
+            d.iaqi.co?.v
+        );
+
+    } catch (err) {
+        document.getElementById("status").textContent = "Error fetching data.";
+    }
+}
+
+// ========= GET LOCATION =========
+function getLocation() {
+    document.getElementById("status").textContent = "Getting location...";
+
+    navigator.geolocation.getCurrentPosition(async pos => {
+        const { latitude, longitude } = pos.coords;
+
+        try {
+            const res = await fetch(
+                `https://api.waqi.info/feed/geo:${latitude};${longitude}/?token=${AQI_TOKEN}`
+            );
+
+            const data = await res.json();
+            if (data.status !== "ok") {
+                document.getElementById("status").textContent = "Could not get AQI data.";
+                return;
+            }
+
+            const d = data.data;
+            document.getElementById("status").textContent = "";
+
+            showData(
+                d.city.name, d.aqi,
+                d.iaqi.pm25?.v, d.iaqi.pm10?.v,
+                d.iaqi.no2?.v, d.iaqi.o3?.v,
+                d.iaqi.co?.v
+            );
+
+        } catch (err) {
+            document.getElementById("status").textContent = "Error fetching data.";
+        }
+    });
+}
+
+// ========= LOAD HISTORY =========
+async function loadHistory() {
+    try {
+        const res = await fetch(`${API_BASE}/api/pollution/history`, {
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        const data = await res.json();
+        const tbody = document.getElementById("historyBody");
+        tbody.innerHTML = "";
+
+        if (!data.length) {
+            tbody.innerHTML = "<tr><td colspan='5'>No history yet.</td></tr>";
+            return;
+        }
+
+        data.forEach(item => {
+            const tr = document.createElement("tr");
+            const date = new Date(item.checkedAt).toLocaleString();
+
+            tr.innerHTML = `
+                <td>${item.city}</td>
+                <td>${item.aqi}</td>
+                <td>${item.pm25 ?? "-"}</td>
+                <td>${item.pm10 ?? "-"}</td>
+                <td>${date}</td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        console.error("Error loading history", err);
+    }
+}
+
+loadHistory();
+</script>
+
+</body>
+</html>

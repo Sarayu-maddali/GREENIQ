@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Leaderboard - GREEN IQ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+const token = localStorage.getItem("token");
+if (!token) location.href = "login.html";
+
+function logout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("playerName");
+    location.href = "login.html";
+}
+</script>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial;
+    overflow-x: hidden;
+    background: url("profile2.jpg") no-repeat center center;
+    background-repeat: no-repeat; 
+    background-position: center; 
+    background-size: cover;
+
+}
+header {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+    background: rgba(255, 243, 243, 0);
+    backdrop-filter: blur(6px);
+    padding: 15px 18px;     
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height:45px;           /* fixed compact height */
+}
+nav a {
+    margin-right:40px;
+    margin-left:10px;
+    text-decoration: none;
+    font-weight: bold;
+    color:#f8fcee;
+    font-size:20px;
+}
+section {
+     padding:100px 20px 20px;
+}
+nav a:hover{
+    color:#c8c9c998;
+}
+.card {
+    background-color: rgba(0,0,0,0.48);
+    padding:20px;
+    border-radius:12px;
+    margin:0 auto;
+    max-width:600px;
+    box-shadow: 0 2px 6px rgba(129, 129, 129, 0.911);
+}
+
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    background-color:rgba(0,0,0,0.48);
+}
+
+th, td {
+    padding:10px;
+    text-align:left;
+    font-size:14px;
+    color:white;
+}
+
+th { 
+    background:rgba(0,0,0,0.48);
+    color:white;
+}
+
+.btn-group {
+    margin-bottom:10px;
+}
+
+.btn-group button {
+    padding:7px 12px;
+    margin-right:5px;
+    border-radius:6px;
+    border:1px solid green;
+    background:#fff;
+    cursor:pointer;
+    font-size:13px;
+    transition:0.2s ease;
+}
+
+.btn-group button.active {
+    background:green;
+    color:#fff;
+}
+
+.btn-group button:hover {
+    background:#d3ffd3;
+}
+
+.highlight-row {
+    background:rgba(0,0,0,0.48) !important;
+    color:white;
+    font-weight:bold;
+}
+
+@media(max-width:600px){
+    header { flex-direction:column; align-items:flex-start; }
+    nav a { display:block; margin:8px 0; }
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+    <div style="font-size:32px;font-weight:bold;color:rgb(222, 234, 222);">GREEN IQ</div>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="pollution.html">Pollution Checker</a>
+        <a href="game.html">Game</a>
+        <a href="leaderboard.html">Leaderboard</a>
+        <a href="profile.html">Profile</a>
+        <a href="javascript:logout()">Logout</a>
+    </nav>
+</header>
+
+<section>
+    <div class="card">
+        <h1 style="color:#c9ef08">Leaderboard</h1>
+        <p style="color:rgb(255, 246, 246);">See top players by period.</p>
+
+        <div class="btn-group">
+            <button id="btnAll" class="active" onclick="changePeriod('all')">All Time</button>
+            <button id="btnWeek" onclick="changePeriod('week')">This Week</button>
+            <button id="btnMonth" onclick="changePeriod('month')">Last 30 Days</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Country</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:20px;">⏳ Loading leaderboard...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+const API_BASE = "http://localhost:4000";
+
+// highlight logged-in user
+const currentPlayer = localStorage.getItem("playerName") || "";
+
+// button active state
+function setActive(period) {
+    document.getElementById("btnAll").classList.remove("active");
+    document.getElementById("btnWeek").classList.remove("active");
+    document.getElementById("btnMonth").classList.remove("active");
+
+    if (period === "all") document.getElementById("btnAll").classList.add("active");
+    if (period === "week") document.getElementById("btnWeek").classList.add("active");
+    if (period === "month") document.getElementById("btnMonth").classList.add("active");
+}
+
+function changePeriod(period) {
+    setActive(period);
+    loadLeaderboard(period);
+}
+
+// fetch leaderboard from backend
+async function loadLeaderboard(period = "all") {
+    try {
+        const res = await fetch(`${API_BASE}/api/leaderboard`);
+        const data = await res.json();
+        const tbody = document.getElementById("leaderboardBody");
+        tbody.innerHTML = "";
+
+        if (!data.length) {
+            tbody.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No scores yet.</td></tr>";
+            return;
+        }
+
+        data.forEach((user, i) => {
+            const tr = document.createElement("tr");
+
+            const medal = 
+                i === 0 ? "🥇" :
+                i === 1 ? "🥈" :
+                i === 2 ? "🥉" : i + 1;
+
+            tr.innerHTML = `
+                <td>${medal}</td>
+                <td>${user.name}</td>
+                <td>${user.country || "-"}</td>
+                <td>${user.score}</td>
+            `;
+
+            if (user.name === currentPlayer) {
+                tr.classList.add("highlight-row");
+            }
+
+            tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        document.getElementById("leaderboardBody").innerHTML =
+            "<tr><td colspan='4' style='text-align:center;'>⚠ Error loading leaderboard.</td></tr>";
+    }
+}
+
+loadLeaderboard("all");
+</script>
+
+</body>
+</html>
